@@ -4,7 +4,7 @@ import cors from "cors";
 const app = express();
 app.use(
 	cors({
-		origin: "https://inventory-client-lac.vercel.app/",
+		origin: "https://inventory-client-lac.vercel.app",
 		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 		allowedHeaders: ["Content-Type", "Authorization"],
 	})
