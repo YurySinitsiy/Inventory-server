@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 
 const app = express();
+
 app.use(
 	cors({
 		origin: "https://inventory-client-lac.vercel.app",
@@ -9,6 +10,7 @@ app.use(
 		allowedHeaders: ["Content-Type", "Authorization"],
 	})
 );
+//app.use(cors());
 app.use(express.json());
 
 app.post("/api/users", (req, res) => {
