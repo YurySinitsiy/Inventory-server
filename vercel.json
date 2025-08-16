@@ -1,11 +1,15 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api/*.js", "use": "@vercel/node" }
+    {
+      "src": "index.js",
+      "use": "@vercel/node"
+    }
   ],
   "routes": [
-    { "src": "/api/inventory$", "dest": "api/inventory.js" },
-    { "src": "/api/inventory/public$", "dest": "api/inventory-public.js" },
-    { "src": "/api/inventory/(.*)$", "dest": "api/inventory-id.js" }
+    {
+      "src": "/(.*)",
+      "dest": "index.js"
+    }
   ]
 }
