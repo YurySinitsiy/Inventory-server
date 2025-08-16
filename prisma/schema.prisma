@@ -18,62 +18,64 @@ model profiles {
   email   String?
 }
 
-
 model Inventory {
-  id            String   @id @default(uuid())
-  title         String
-  description   String
-  category      String
-  imageUrl      String?
-  tags          String[]
-  isPublic      Boolean  @default(false)
+  id             String          @id @default(uuid())
+  title          String          @default("New Inventory")
+  description    String          @default("Description")
+  category       String          @default("Category")
+  imageUrl       String?
+  tags           String[]
+  isPublic       Boolean         @default(false)
   customIdFormat Json
-  fields        Json
-  version       Int      @default(1)
-  ownerId       String   // References profiles(id)
-  items         Item[]
-  comments      Comment[]
-  users         InventoryUser[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  fields         Json
+  version        Int             @default(1)
+  ownerId        String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  comments       Comment[]
+  users          InventoryUser[]
+  items          Item[]
 }
 
 model InventoryUser {
-  inventoryId   String
-  userId        String
-  inventory     Inventory @relation(fields: [inventoryId], references: [id])
+  inventoryId String
+  userId      String
+  inventory   Inventory @relation(fields: [inventoryId], references: [id])
+
   @@id([inventoryId, userId])
 }
 
 model Item {
-  id            String   @id @default(uuid())
-  inventoryId   String
-  inventory     Inventory @relation(fields: [inventoryId], references: [id])
-  customId      String
-  fields        Json
-  createdBy     String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  version       Int      @default(1)
-  likes         Like[]
+  id          String    @id @default(uuid())
+  inventoryId String
+  customId    String
+  fields      Json
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  version     Int       @default(1)
+  inventory   Inventory @relation(fields: [inventoryId], references: [id])
+  likes       Like[]
+
   @@unique([inventoryId, customId])
 }
 
 model Comment {
-  id            String   @id @default(uuid())
-  inventoryId   String
-  inventory     Inventory @relation(fields: [inventoryId], references: [id])
-  userId        String
-  content       String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String    @id @default(uuid())
+  inventoryId String
+  userId      String
+  content     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  inventory   Inventory @relation(fields: [inventoryId], references: [id])
 }
 
 model Like {
-  id            String   @id @default(uuid())
-  itemId        String
-  item          Item     @relation(fields: [itemId], references: [id])
-  userId        String
-  createdAt     DateTime @default(now())
+  id        String   @id @default(uuid())
+  itemId    String
+  userId    String
+  createdAt DateTime @default(now())
+  item      Item     @relation(fields: [itemId], references: [id])
+
   @@unique([itemId, userId])
 }
