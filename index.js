@@ -5,23 +5,23 @@ import { supabase } from "./src/supabaseClient.js";
 
 const app = express();
 
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "https://inventory-client-lac.vercel.app");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
-  if (req.method === "OPTIONS") return res.sendStatus(200);
-  next();
-});
+app.use(
+	cors({
+		origin: "https://inventory-client-lac.vercel.app",
+		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+		allowedHeaders: ["Content-Type", "Authorization"],
+	})
+);
 //app.use(cors());
 app.use(express.json());
 
-// app.post("/api/users", (req, res) => {
-// 	const user = "hello world";
+app.post("/api/users", (req, res) => {
+	const user = "hello world";
 
-// 	res.json({
-// 		user,
-// 	});
-// });
+	res.json({
+		user,
+	});
+});
 
 app.get("/", (req, res) => {
 	res.json({ status: "Server is working!" });
