@@ -7,7 +7,7 @@ const app = express();
 
 app.use(
 	cors({
-		origin: "https://inventory-client-lac.vercel.app",
+		origin: "*",
 		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 		allowedHeaders: ["Content-Type", "Authorization"],
 	})
@@ -15,13 +15,13 @@ app.use(
 //app.use(cors());
 app.use(express.json());
 
-app.post("/api/users", (req, res) => {
-	const user = "hello world";
+// app.post("/api/users", (req, res) => {
+// 	const user = "hello world";
 
-	res.json({
-		user,
-	});
-});
+// 	res.json({
+// 		user,
+// 	});
+// });
 
 app.get("/", (req, res) => {
 	res.json({ status: "Server is working!" });
