@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model profiles {
+  id      String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name    String?
+  surname String?
+  role    String? @default("user")
+  status  String? @default("unblocked")
+  email   String?
+}
+
+
+model Inventory {
+  id            String   @id @default(uuid())
+  title         String
+  description   String
+  category      String
+  imageUrl      String?
+  tags          String[]
+  isPublic      Boolean  @default(false)
+  customIdFormat Json
+  fields        Json
+  version       Int      @default(1)
+  ownerId       String   // References profiles(id)
+  items         Item[]
+  comments      Comment[]
+  users         InventoryUser[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model InventoryUser {
+  inventoryId   String
+  userId        String
+  inventory     Inventory @relation(fields: [inventoryId], references: [id])
+  @@id([inventoryId, userId])
+}
+
+model Item {
+  id            String   @id @default(uuid())
+  inventoryId   String
+  inventory     Inventory @relation(fields: [inventoryId], references: [id])
+  customId      String
+  fields        Json
+  createdBy     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  version       Int      @default(1)
+  likes         Like[]
+  @@unique([inventoryId, customId])
+}
+
+model Comment {
+  id            String   @id @default(uuid())
+  inventoryId   String
+  inventory     Inventory @relation(fields: [inventoryId], references: [id])
+  userId        String
+  content       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Like {
+  id            String   @id @default(uuid())
+  itemId        String
+  item          Item     @relation(fields: [itemId], references: [id])
+  userId        String
+  createdAt     DateTime @default(now())
+  @@unique([itemId, userId])
+}
