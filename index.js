@@ -5,15 +5,17 @@ import { supabase } from "./src/supabaseClient.js";
 
 const app = express();
 
-const allowedOrigins = ["https://inventory-client-lac.vercel.app"];
+const allowedOrigin = "https://inventory-client-lac.vercel.app";
 
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "https://inventory-client-lac.vercel.app");
+  res.header("Access-Control-Allow-Origin", allowedOrigin);
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
   if (req.method === "OPTIONS") {
-    return res.sendStatus(204); // 👈 важно для Vercel
+    return res.sendStatus(204); // 👈 Vercel любит именно так
   }
+
   next();
 });
 
