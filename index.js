@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import prisma from "./src/prismaClient.js";
+import prisma from "./prismaClient.js";
 import { supabase } from "./src/supabaseClient.js";
 
 const app = express();
