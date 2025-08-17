@@ -5,25 +5,15 @@ import { supabase } from "./src/supabaseClient.js";
 
 const app = express();
 
-const allowedOrigin = "https://inventory-client-lac.vercel.app";
-
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", allowedOrigin);
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-if (req.method === "OPTIONS") {
-    return res.status(200).end(); // ⚡️ иногда 204 на Vercel не срабатывает
-  }
-
-  next();
-});
-
-// 👇 обязательно!
-app.options("*", cors());
-
-app.use(express.json());
+app.use(
+	cors({
+		origin: "https://inventory-client-lac.vercel.app",
+		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+		allowedHeaders: ["Content-Type", "Authorization"],
+	})
+);
 //app.use(cors());
+app.use(express.json());
 
 app.post("/api/users", (req, res) => {
 	const user = "hello world";
