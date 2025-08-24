@@ -407,6 +407,39 @@ app.get("/api/inventories/:id/users-access", async (req, res) => {
   }
 });
 
+app.post("/api/users/:id/users-access/bulk", async (req, res) => {
+  try {
+    const { id: inventoryId } = req.params;
+    const { users } = req.body;
+
+    if (!Array.isArray(users)) {
+      return res.status(400).json({ error: "users должен быть массивом" });
+    }
+
+    for (const u of users) {
+      if (u.hasAccess) {
+        // даём доступ: создаём запись, если её нет
+        await prisma.inventoryUser.upsert({
+          where: { inventoryId_userId: { inventoryId, userId: u.userId } },
+          update: {}, // ничего не меняем, если запись есть
+          create: { inventoryId, userId: u.userId },
+        });
+      } else {
+        // убираем доступ: удаляем запись
+        await prisma.inventoryUser.deleteMany({
+          where: { inventoryId, userId: u.userId },
+        });
+      }
+    }
+
+    res.json({ success: true, updated: users.length });
+  } catch (err) {
+    console.error("Ошибка при обновлении доступа:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
 // Удаление пользователя (профиль + Supabase Auth)
 app.delete("/api/users", async (req, res) => {
 	try {
