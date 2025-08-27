@@ -10,11 +10,11 @@ datasource db {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model profiles {
   id      String  @id @db.Uuid
-  email   String?
   name    String?
   surname String?
   role    String? @default("user")
   status  String? @default("unblocked")
+  email   String?
 }
 
 model Inventory {

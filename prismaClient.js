@@ -1,10 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 
-let prisma;
-console.log("DATABASE_URL =", process.env.DATABASE_URL);
-if (!global.prisma) {
-  global.prisma = new PrismaClient();
+const prisma = globalThis.prisma || new PrismaClient();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalThis.prisma = prisma;
 }
 
-prisma = global.prisma;
 export default prisma;
