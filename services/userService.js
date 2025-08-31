@@ -9,13 +9,13 @@ const checkUserProfile = async (userId) => {
 
   if (!profile) {
     const err = new Error('User not found');
-    err.status = 401; // неавторизованный
+    err.status = 401;
     throw err;
   }
 
   if (profile.status === 'blocked') {
     const err = new Error('User blocked');
-    err.status = 403; // доступ запрещён
+    err.status = 403;
     throw err;
   }
 
