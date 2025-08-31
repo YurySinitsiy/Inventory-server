@@ -15,6 +15,7 @@ model profiles {
   role    String? @default("user")
   status  String? @default("unblocked")
   email   String?
+  inventories Inventory[]
 }
 
 model Inventory {
@@ -24,9 +25,10 @@ model Inventory {
   imageUrl       String?
   isPublic       Boolean         @default(false)
   customIdFormat Json
-  fields         Json
+  fieldConfigs   InventoryFieldConfig[]
   version        Int             @default(1)
-  ownerId        String
+  ownerId        String          @db.Uuid
+  owner          profiles        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   category       String?
@@ -34,6 +36,19 @@ model Inventory {
   InventoryTag   InventoryTag[]
   users          InventoryUser[]
   items          Item[]
+}
+
+model InventoryFieldConfig {
+  inventoryId    String
+  slot           FieldSlot
+  title          String
+  description    String?
+  visibleInTable Boolean @default(true)
+  position       Int
+
+  inventory Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+
+  @@id([inventoryId, slot]) // по инвентарю каждый слот максимум один
 }
 
 model InventoryUser {
@@ -45,14 +60,31 @@ model InventoryUser {
 }
 
 model Item {
-  id          String    @id @default(uuid())
+  id          String   @id @default(uuid())
   inventoryId String
   customId    String
-  fields      Json
   createdBy   String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  version     Int       @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  version     Int      @default(1)
+
+  // ФИКСИРОВАННЫЕ ЗНАЧЕНИЯ ПОЛЕЙ (никакого JSON):
+  text1       String?
+  text2       String?
+  text3       String?
+  multiline1  String?
+  multiline2  String?
+  multiline3  String?
+  number1     Float?
+  number2     Float?
+  number3     Float?
+  link1       String?
+  link2       String?
+  link3       String?
+  boolean1    Boolean?
+  boolean2    Boolean?
+  boolean3    Boolean?
+
   inventory   Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
   likes       Like[]
 
@@ -102,3 +134,24 @@ model InventoryTag {
 
   @@id([inventoryId, tagId])
 }
+
+enum FieldSlot {
+  TEXT1
+  TEXT2
+  TEXT3
+  MULTILINE1
+  MULTILINE2
+  MULTILINE3
+  NUMBER1
+  NUMBER2
+  NUMBER3
+  LINK1
+  LINK2
+  LINK3
+  BOOLEAN1
+  BOOLEAN2
+  BOOLEAN3
+}
+
+
+
