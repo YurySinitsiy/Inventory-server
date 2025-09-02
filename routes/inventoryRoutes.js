@@ -15,19 +15,19 @@ router.get('/public', checkAuth, InventoryController.getPublicInventories);
 router.get('/:id', InventoryController.getInventoryById);
 router.put('/:id', checkAuth, InventoryController.updateInventory);
 
-router.get('/:id/owner', checkAuth,InventoryController.getOwner)
+router.get('/:id/owner', InventoryController.getOwner)
 
-router.get('/:id/tags', checkAuth,InventoryController.getInventoryTags)
+router.get('/:id/tags', InventoryController.getInventoryTags)
 
 
 router.get('/:id/fields', InventoryController.getInventoryFields);
 router.post('/:id/fields', checkAuth, InventoryController.createInventoryField);
 
 router.post('/:id/items', checkAuth, InventoryController.createInventoryItem)
-router.get('/:id/items', checkAuth, InventoryController.getInventoryItems)
+router.get('/:id/items', InventoryController.getInventoryItems)
 router.delete('/:id/items', checkAuth, InventoryController.deleteItems)
 
-router.get('/:id/idFormat', checkAuth, InventoryController.getInventoryCustomIdFormat)
+router.get('/:id/idFormat', InventoryController.getInventoryCustomIdFormat)
 
 
 router.delete('/', checkAuth, InventoryController.deleteInventories);
