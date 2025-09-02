@@ -41,6 +41,7 @@ model Inventory {
 model InventoryFieldConfig {
   inventoryId    String
   slot           FieldSlot
+  type           String     @default("text")
   title          String
   description    String?
   visibleInTable Boolean @default(true)
@@ -136,21 +137,21 @@ model InventoryTag {
 }
 
 enum FieldSlot {
-  TEXT1
-  TEXT2
-  TEXT3
-  MULTILINE1
-  MULTILINE2
-  MULTILINE3
-  NUMBER1
-  NUMBER2
-  NUMBER3
-  LINK1
-  LINK2
-  LINK3
-  BOOLEAN1
-  BOOLEAN2
-  BOOLEAN3
+  text1
+  text2
+  text3
+  multiline1
+  multiline2
+  multiline3
+  number1
+  number2
+  number3
+  link1
+  link2
+  link3
+  boolean1
+  boolean2
+  boolean3
 }
 
 
