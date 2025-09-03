@@ -1,9 +1,7 @@
 import prisma from '../lib/prismaClient.js';
-import { supabase } from '../lib/supabaseClient.js';
 import { TagService } from './tagService.js';
 import { CategoryService } from './categoryService.js';
 import { hasWriteAccess } from '../utils/permissions.js';
-import { randomUUID } from 'crypto';
 
 export class InventoryService {
   /**
@@ -436,11 +434,23 @@ export class InventoryService {
       Object.entries(data).filter(([key]) => slotFields.includes(key))
     );
 
+    const { customId } = data;
+
+    const exists = await prisma.item.findFirst({
+      where: { inventoryId, customId },
+    });
+
+    if (exists) {
+      const error = new Error('The Custom ID is already in use');
+      error.status = 400; // добавляем код ошибки
+      throw error;
+    }
+
     const itemData = {
       inventoryId,
       customId: data.customId,
       createdBy: data.createdBy,
-      ...mappedSlots, // все text1/number1/… которые есть в data
+      ...mappedSlots,
     };
 
     const item = await prisma.item.create({ data: itemData });

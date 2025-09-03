@@ -189,7 +189,9 @@ export class InventoryController {
       res.json(item);
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: 'Check owner error' });
+      res
+        .status(error.status || 500)
+        .json({ message: error.message || 'Create Item error' });
     }
   }
 
