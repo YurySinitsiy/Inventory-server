@@ -8,7 +8,6 @@ const upsertSocialProfile = async (user) => {
   ).split(' ');
   const surname = surnameParts.join(' ');
   const { email, id } = user;
-  console.log(name, surname);
   const profile = await prisma.profiles.upsert({
     where: { id },
     update: { name, surname, email },

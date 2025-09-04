@@ -327,7 +327,7 @@ export class InventoryService {
   static async getInventoryFields(inventoryId) {
     const fields = await prisma.inventoryFieldConfig.findMany({
       where: { inventoryId },
-      orderBy: { position: 'asc' }
+      orderBy: { position: 'asc' },
     });
 
     if (!fields) {
