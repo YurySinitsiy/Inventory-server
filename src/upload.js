@@ -4,7 +4,7 @@ import streamifier from "streamifier";
 import cloudinary from "./clodinary.js";
 
 const uploadRoutes = express.Router();
-const upload = multer(); // сохраняем файлы в память
+const upload = multer();
 
 uploadRoutes.post("/", upload.single("file"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });

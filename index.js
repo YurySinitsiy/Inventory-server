@@ -9,18 +9,17 @@ import metadataRoutes from './routes/metadataRoutes.js';
 
 const app = express();
 
-// Настройка CORS
-// app.use(
-// 	cors({
-// 		origin: "https://inventory-client-lac.vercel.app",
-// 		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-// 		allowedHeaders: ["Content-Type", "Authorization"],
-// 	})
-// );
-app.use(cors());
+app.use(
+	cors({
+		origin: "https://inventory-client-lac.vercel.app",
+		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+		allowedHeaders: ["Content-Type", "Authorization"],
+	})
+);
+//app.use(cors());
 app.use(express.json());
 
-//
+
 app.get('/', (req, res) => {
   res.json({ status: 'Server is working!' });
 });
@@ -28,17 +27,13 @@ app.get('/', (req, res) => {
 app.get('/api', (req, res) => {
   res.json({ message: 'API response' });
 });
-//
 
-//
 app.use('/api/upload', uploadRoutes);
 app.use('/api/inventories', inventoryRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api', metadataRoutes);
-//
 
-//
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
