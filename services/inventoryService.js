@@ -412,49 +412,36 @@ export class InventoryService {
    */
 
   static async createInventoryItem(inventoryId, data) {
-    const slotFields = [
-      'text1',
-      'text2',
-      'text3',
-      'multiline1',
-      'multiline2',
-      'multiline3',
-      'number1',
-      'number2',
-      'number3',
-      'link1',
-      'link2',
-      'link3',
-      'boolean1',
-      'boolean2',
-      'boolean3',
-    ];
-
-    const mappedSlots = Object.fromEntries(
-      Object.entries(data).filter(([key]) => slotFields.includes(key))
-    );
-
-    const { customId } = data;
-
-    const exists = await prisma.item.findFirst({
-      where: { inventoryId, customId },
-    });
-
-    if (exists) {
-      const error = new Error('The Custom ID is already in use');
-      error.status = 400; // добавляем код ошибки
-      throw error;
-    }
-
     const itemData = {
       inventoryId,
       customId: data.customId,
       createdBy: data.createdBy,
-      ...mappedSlots,
+      text1: data.text1,
+      text2: data.text2,
+      text3: data.text3,
+      multiline1: data.multiline1,
+      multiline2: data.multiline2,
+      multiline3: data.multiline3,
+      number1: data.number1 != null ? parseFloat(data.number1) : null,
+      number2: data.number2 != null ? parseFloat(data.number2) : null,
+      number3: data.number3 != null ? parseFloat(data.number3) : null,
+      link1: data.link1,
+      link2: data.link2,
+      link3: data.link3,
+      boolean1: data.boolean1 != null ? Boolean(data.boolean1) : null,
+      boolean2: data.boolean2 != null ? Boolean(data.boolean2) : null,
+      boolean3: data.boolean3 != null ? Boolean(data.boolean3) : null,
     };
 
-    const item = await prisma.item.create({ data: itemData });
-    return item;
+    const exists = await prisma.item.findFirst({
+      where: { inventoryId, customId: data.customId },
+    });
+    if (exists)
+      throw Object.assign(new Error('Custom ID already in use'), {
+        status: 400,
+      });
+
+    return prisma.item.create({ data: itemData });
   }
 
   /**
