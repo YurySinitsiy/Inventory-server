@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-
 import uploadRoutes from './src/upload.js';
 import inventoryRoutes from './routes/inventoryRoutes.js';
 import userRoutes from './routes/userRoutes.js';
