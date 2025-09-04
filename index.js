@@ -10,15 +10,16 @@ import metadataRoutes from './routes/metadataRoutes.js';
 const app = express();
 
 app.use(
-	cors({
-		origin: "https://inventory-client-lac.vercel.app",
-		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-		allowedHeaders: ["Content-Type", "Authorization"],
-	})
+  cors({
+    origin: [
+      'http://localhost:5173',
+      'https://inventory-client-lac.vercel.app', 
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
 );
-//app.use(cors());
 app.use(express.json());
-
 
 app.get('/', (req, res) => {
   res.json({ status: 'Server is working!' });

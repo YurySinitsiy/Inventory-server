@@ -177,17 +177,7 @@ export class InventoryService {
    * @returns {Promise<Object>}
    */
   static async updateInventory(id, user, data) {
-    const {
-      title,
-      description,
-      imageUrl,
-      isPublic,
-      category,
-      tags = [],
-      customIdFormat,
-      fields = [],
-      version,
-    } = data;
+    const { customIdFormat, fields = [], version } = data;
 
     const inventory = await prisma.inventory.findUnique({
       where: { id },
@@ -210,35 +200,15 @@ export class InventoryService {
     }
 
     return await prisma.$transaction(async (tx) => {
-      if (category && category !== inventory.category) {
-        await tx.category.upsert({
-          where: { name: category },
-          update: {},
-          create: { name: category },
-        });
-      }
-
-      const tagRecords = await TagService.upsertTags(tags);
-
       await tx.inventory.update({
         where: { id },
         data: {
-          title,
-          description,
-          imageUrl,
-          isPublic,
-          category,
           customIdFormat,
           version: { increment: 1 },
-          InventoryTag: {
-            deleteMany: {},
-            create: tagRecords,
-          },
         },
       });
 
       await this.syncCustomFieldsInTransaction(tx, inventory, fields);
-
       return await tx.inventory.findUnique({
         where: { id },
         include: {
