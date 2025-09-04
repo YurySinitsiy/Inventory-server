@@ -12,7 +12,7 @@ const app = express();
 app.use(
 	cors({
 		origin: "https://inventory-client-lac.vercel.app",
-		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
 		allowedHeaders: ["Content-Type", "Authorization"],
 	})
 );
