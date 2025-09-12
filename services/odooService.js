@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import prisma from '../lib/prismaClient.js';
 
 export class OdooService {
   static async getToken(profileId) {
