@@ -53,8 +53,6 @@ export class OdooService {
   }
 
   static aggregateFields(inventory) {
-    console.log(inventory)
-    // Слоты по типам
     const slots = {
       text: [
         'text1',
@@ -69,82 +67,78 @@ export class OdooService {
       link: ['link1', 'link2', 'link3'],
     };
 
-    // Функция для агрегирования текстовых или ссылочных полей
-    const aggregateTextLink = (fieldType) => {
-      return inventory.fieldConfigs
-        .filter((f) => slots[fieldType].includes(f.slot))
-        .map((f) => {
-          const values = inventory.items
-            .map((item) => item[f.slot])
-            .filter((v) => v != null && v !== '');
-          if (!values.length) return null;
-
-          const top_answers = _(values)
-            .countBy()
-            .map((count, value) => ({ value, count }))
-            .orderBy('count', 'desc')
-            .take(5)
-            .value();
-
-          return {
-            text: f.title,
-            type: fieldType,
-            count: values.length,
-            top_answers,
-          };
-        })
-        .filter(Boolean);
-    };
-
-    // Агрегирование числовых полей
-    const aggregateNumber = () => {
-      return inventory.fieldConfigs
-        .filter((f) => slots.number.includes(f.slot))
-        .map((f) => {
-          const values = inventory.items
-            .map((item) => item[f.slot])
-            .filter((v) => typeof v === 'number');
-          if (!values.length) return null;
-
-          return {
-            text: f.title,
-            type: 'number',
-            count: values.length,
-            min: _.min(values),
-            max: _.max(values),
-            average: _.round(_.mean(values), 2),
-          };
-        })
-        .filter(Boolean);
-    };
-
-    // Агрегирование булевых полей
-    const aggregateBoolean = () => {
-      return inventory.fieldConfigs
-        .filter((f) => slots.boolean.includes(f.slot))
-        .map((f) => {
-          const values = inventory.items
-            .map((item) => item[f.slot])
-            .filter((v) => typeof v === 'boolean');
-          if (!values.length) return null;
-
-          const counts = _.countBy(values); // {true: 3, false: 1}
-          return {
-            text: f.title,
-            type: 'boolean',
-            count: values.length,
-            counts,
-          };
-        })
-        .filter(Boolean);
-    };
-
-    // Собираем все вместе
     return [
-      ...aggregateTextLink('text'),
-      ...aggregateTextLink('link'),
-      ...aggregateNumber(),
-      ...aggregateBoolean(),
+      ...this.aggregateTextLink(slots, inventory, 'text'),
+      ...this.aggregateTextLink(slots, inventory, 'link'),
+      ...this.aggregateNumber(slots, inventory),
+      ...this.aggregateBoolean(slots, inventory),
     ];
   }
+
+  static aggregateTextLink = (slots, inventory, fieldType) => {
+    return inventory.fieldConfigs
+      .filter((f) => slots[fieldType].includes(f.slot))
+      .map((f) => {
+        const values = inventory.items
+          .map((item) => item[f.slot])
+          .filter((v) => v != null && v !== '');
+        if (!values.length) return null;
+
+        const top_answers = _(values)
+          .countBy()
+          .map((count, value) => ({ value, count }))
+          .orderBy('count', 'desc')
+          .take(5)
+          .value();
+
+        return {
+          text: f.title,
+          type: fieldType,
+          count: values.length,
+          top_answers,
+        };
+      })
+      .filter(Boolean);
+  };
+
+  static aggregateNumber = (slots, inventory) => {
+    return inventory.fieldConfigs
+      .filter((f) => slots.number.includes(f.slot))
+      .map((f) => {
+        const values = inventory.items
+          .map((item) => item[f.slot])
+          .filter((v) => typeof v === 'number');
+        if (!values.length) return null;
+
+        return {
+          text: f.title,
+          type: 'number',
+          count: values.length,
+          min: _.min(values),
+          max: _.max(values),
+          average: _.round(_.mean(values), 2),
+        };
+      })
+      .filter(Boolean);
+  };
+
+  static aggregateBoolean = (slots, inventory) => {
+    return inventory.fieldConfigs
+      .filter((f) => slots.boolean.includes(f.slot))
+      .map((f) => {
+        const values = inventory.items
+          .map((item) => item[f.slot])
+          .filter((v) => typeof v === 'boolean');
+        if (!values.length) return null;
+
+        const counts = _.countBy(values);
+        return {
+          text: f.title,
+          type: 'boolean',
+          count: values.length,
+          counts,
+        };
+      })
+      .filter(Boolean);
+  };
 }
