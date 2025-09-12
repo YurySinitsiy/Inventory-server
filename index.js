@@ -14,6 +14,7 @@ app.use(
     origin: function (origin, callback) {
       const allowedOrigins = [
         'https://my-odoo-app.odoo.com',
+        'http://127.0.0.1:5500/index.html',
         'http://localhost:5173',
         'https://inventory-client-lac.vercel.app',
       ];
