@@ -101,4 +101,15 @@ export class UserManagementService {
     });
   }
 
+  /**
+   * @param {string} id
+   * @returns {Promise<object>}
+   */
+
+  static async getUserById(id) {
+    return await prisma.profiles.findUnique({
+      where: { id },
+    });
+  }
+
 }

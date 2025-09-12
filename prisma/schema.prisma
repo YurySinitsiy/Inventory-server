@@ -15,7 +15,36 @@ model profiles {
   role    String? @default("user")
   status  String? @default("unblocked")
   email   String?
+  imageUrl   String?
+  
+  salesforce Salesforce?
+  Odoo       Odoo?
   inventories Inventory[]
+}
+
+model Salesforce {
+  id             String   @id @default(uuid())
+  profileId      String   @unique @db.Uuid
+  salesforceId   String?
+  accessToken    String?
+  refreshToken   String?
+  instanceUrl    String?
+  name           String?
+  surname        String?
+  phone          String?
+  email          String?
+  accountName    String? 
+
+  profile        profiles @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model Odoo {
+  id             String    @id @default(uuid())
+  profileId      String    @unique @db.Uuid
+  apiToken       String?   @unique
+
+  profile        profiles @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
 }
 
 model Inventory {
@@ -38,6 +67,8 @@ model Inventory {
   items          Item[]
 }
 
+
+
 model InventoryFieldConfig {
   inventoryId    String
   slot           FieldSlot
@@ -49,7 +80,7 @@ model InventoryFieldConfig {
 
   inventory Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
 
-  @@id([inventoryId, slot]) // по инвентарю каждый слот максимум один
+  @@id([inventoryId, slot]) 
 }
 
 model InventoryUser {
@@ -69,7 +100,6 @@ model Item {
   updatedAt   DateTime @updatedAt
   version     Int      @default(1)
 
-  // ФИКСИРОВАННЫЕ ЗНАЧЕНИЯ ПОЛЕЙ (никакого JSON):
   text1       String?
   text2       String?
   text3       String?

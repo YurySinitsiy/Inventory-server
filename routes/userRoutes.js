@@ -12,6 +12,7 @@ router.delete('/', checkAuth, UserController.deleteUsers);
 
 router.patch('/update', checkAuth, UserController.updateUsersStatusAndRole);
 
+router.get('/:id', checkAuth, UserController.getUserById)
 router.get('/:id/users-access', checkAuth, UserController.getUsersWithInventoryAccess);
 router.post('/:id/users-access/bulk', UserController.bulkUpdateInventoryAccess);
 
