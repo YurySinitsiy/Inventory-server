@@ -12,7 +12,7 @@ const app = express();
 app.use(
   cors({
     origin: [
-      'https://invy2.odoo.com',
+      'https://my-odoo-app.odoo.com',
       'http://localhost:5173',
       'https://inventory-client-lac.vercel.app',
     ],
