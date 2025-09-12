@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import prisma from '../lib/prismaClient.js';
-import { text } from 'stream/consumers';
+import _ from 'lodash';
 
 export class OdooService {
   static async getToken(profileId) {
@@ -27,16 +27,11 @@ export class OdooService {
     const user = await this.getUserByToken(token);
     const userInventories = await this.getUserInventories(user.profileId);
 
-    // return {
-    //   user,
-    //   userInventories,
-    // };
-
     return userInventories.map((inv) => ({
       templateId: inv.id,
       title: inv.title,
       author: `${user.profile.name} ${user.profile.surname}`,
-      questions: this.aggregateQuestions(inv),
+      questions: this.aggregateFields(inv),
     }));
   }
 
@@ -57,66 +52,99 @@ export class OdooService {
     });
   }
 
-  static aggregateQuestions(inv) {
+  static aggregateFields(inventory) {
+    console.log(inventory)
+    // Слоты по типам
+    const slots = {
+      text: [
+        'text1',
+        'text2',
+        'text3',
+        'multiline1',
+        'multiline2',
+        'multiline3',
+      ],
+      number: ['number1', 'number2', 'number3'],
+      boolean: ['boolean1', 'boolean2', 'boolean3'],
+      link: ['link1', 'link2', 'link3'],
+    };
+
+    // Функция для агрегирования текстовых или ссылочных полей
+    const aggregateTextLink = (fieldType) => {
+      return inventory.fieldConfigs
+        .filter((f) => slots[fieldType].includes(f.slot))
+        .map((f) => {
+          const values = inventory.items
+            .map((item) => item[f.slot])
+            .filter((v) => v != null && v !== '');
+          if (!values.length) return null;
+
+          const top_answers = _(values)
+            .countBy()
+            .map((count, value) => ({ value, count }))
+            .orderBy('count', 'desc')
+            .take(5)
+            .value();
+
+          return {
+            text: f.title,
+            type: fieldType,
+            count: values.length,
+            top_answers,
+          };
+        })
+        .filter(Boolean);
+    };
+
+    // Агрегирование числовых полей
+    const aggregateNumber = () => {
+      return inventory.fieldConfigs
+        .filter((f) => slots.number.includes(f.slot))
+        .map((f) => {
+          const values = inventory.items
+            .map((item) => item[f.slot])
+            .filter((v) => typeof v === 'number');
+          if (!values.length) return null;
+
+          return {
+            text: f.title,
+            type: 'number',
+            count: values.length,
+            min: _.min(values),
+            max: _.max(values),
+            average: _.round(_.mean(values), 2),
+          };
+        })
+        .filter(Boolean);
+    };
+
+    // Агрегирование булевых полей
+    const aggregateBoolean = () => {
+      return inventory.fieldConfigs
+        .filter((f) => slots.boolean.includes(f.slot))
+        .map((f) => {
+          const values = inventory.items
+            .map((item) => item[f.slot])
+            .filter((v) => typeof v === 'boolean');
+          if (!values.length) return null;
+
+          const counts = _.countBy(values); // {true: 3, false: 1}
+          return {
+            text: f.title,
+            type: 'boolean',
+            count: values.length,
+            counts,
+          };
+        })
+        .filter(Boolean);
+    };
+
+    // Собираем все вместе
     return [
-      ...this.aggregateTextFields(inv),
-      // ...this.aggregateNumberFields(items),
-      // ...this.aggregateBooleanFields(items),
-      // ...this.aggregateLinksFields(items),
+      ...aggregateTextLink('text'),
+      ...aggregateTextLink('link'),
+      ...aggregateNumber(),
+      ...aggregateBoolean(),
     ];
   }
-
-  static aggregateTextFields(inventory) {
-    // 1. Список текстовых слотов
-    const textSlots = [
-      'text1',
-      'text2',
-      'text3',
-      'multiline1',
-      'multiline2',
-      'multiline3',
-    ];
-
-    // 2. Берём только текстовые поля из fieldConfigs
-    const textFields = inventory.fieldConfigs
-      .filter((f) => textSlots.includes(f.slot))
-      .map((f) => ({ slot: f.slot, title: f.title }));
-
-    // 3. Агрегируем значения
-    const aggregated = textFields
-      .map((field) => {
-        // Берём все значения этого поля из items
-        const values = inventory.items
-          .map((item) => item[field.slot])
-          .filter((v) => v != null && v !== '');
-
-        if (!values.length) return null;
-
-        // Считаем количество повторений
-        const counts = {};
-        values.forEach((v) => (counts[v] = (counts[v] || 0) + 1));
-
-        // Формируем топ-5 ответов
-        const top_answers = Object.entries(counts)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 5)
-          .map(([value, count]) => ({ value, count }));
-
-        return {
-          text: field.title,
-          type: 'text',
-          count: values.length,
-          top_answers,
-        };
-      })
-      .filter(Boolean); // убираем пустые
-
-    return aggregated;
-  }
-
-  static aggregateNumberFields(inventory) {}
-
-  static aggregateBooleanFields(inventory) {}
-
-  static aggregateLinksFields(inventory) {}
 }
