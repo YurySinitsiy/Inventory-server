@@ -14,8 +14,8 @@ app.use(
     origin: [
       'http://localhost:5173',
       'https://inventory-client-lac.vercel.app',
-      'https://invy.odoo.com',
       'https://invy2.odoo.com',
+      'https://invy.odoo.com',
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-api-token'],
