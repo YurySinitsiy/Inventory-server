@@ -26,6 +26,7 @@ model Salesforce {
   id             String   @id @default(uuid())
   profileId      String   @unique @db.Uuid
   salesforceId   String?
+  accountId      String?
   accessToken    String?
   refreshToken   String?
   instanceUrl    String?

@@ -22,17 +22,18 @@ export class SupportService {
   }
 
   static dropbox = new Dropbox({
-    accessToken: process.env.DROPBOX_ACCESS_TOKEN,
+    clientId: process.env.DROPBOX_APP_KEY,
+    clientSecret: process.env.DROPBOX_APP_SECRET,
+    refreshToken: process.env.DROPBOX_REFRESH_TOKEN,
     fetch,
   });
 
   static async uploadToDropbox(path, dataToSend) {
-    const res = await this.dropbox.filesUpload({
+    await this.dropbox.filesUpload({
       path,
       contents: dataToSend,
       mode: 'overwrite',
-      mute: true
+      mute: true,
     });
-    console.log('Файл успешно загружен:', res.result?.path_display);
   }
 }

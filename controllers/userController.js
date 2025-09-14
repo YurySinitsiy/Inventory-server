@@ -80,6 +80,7 @@ export class UserController {
         email: req.user.email,
         role: req.profile.role,
         status: req.profile.status,
+        name: req.profile.name,
         salesforceId: req.profile.salesforceId,
       });
     } catch (error) {

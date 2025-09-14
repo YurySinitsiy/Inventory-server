@@ -2,11 +2,10 @@ import { SALESFORCE } from '../config/salesforce.js';
 
 export class SalesforceService {
   /**
-   * @param {string} profileId
    * @param {Object} profileData
-   * @returns {Promise<void>}
+   * @returns {Promise<Object>}
    */
-  static async saveProfileDraft(profileId, profileData) {
+  static async saveProfileDraft(profileData) {
     const data = {
       name: profileData.name,
       surname: profileData.surname,
@@ -15,11 +14,13 @@ export class SalesforceService {
       accountName: profileData.accountName,
     };
     return prisma.salesforce.upsert({
-      where: { profileId },
-      update: { ...data },
+      where: { profileId: profileData.id },
+      update: data,
       create: {
-        profileId,
         ...data,
+        profile: {
+          connect: { id: profileData.id },
+        },
       },
     });
   }
@@ -66,7 +67,15 @@ export class SalesforceService {
         profileData,
         tokenData
       );
+
+      const accountData = await this.createSalesforceAccount(
+        profileData,
+        tokenData,
+        contactData.id
+      );
+
       updateData.salesforceId = contactData.id;
+      updateData.accountId = accountData.id;
     }
 
     await prisma.salesforce.update({
@@ -94,61 +103,51 @@ export class SalesforceService {
   /**
    * @param {Object} profileData
    * @param {Object} tokenData
+   * @param {string} accountId
    * @returns {Promise<Object>}
    */
-
-  static async createSalesforceContact(profileData, tokenData) {
-    if (!tokenData.access_token || !tokenData.instance_url) {
-      throw new Error('Invalid Salesforce token data');
-    }
-
-    const accountId = await this.createSalesforceAccount(
-      profileData.accountName,
-      tokenData
-    );
-
-    const url = `${tokenData.instance_url}/services/data/v64.0/sobjects/Contact/`;
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${tokenData.access_token}`,
-        'Content-Type': 'application/json',
-      },
-
-      body: JSON.stringify({
-        FirstName: profileData.name,
-        LastName: profileData.surname,
-        Phone: profileData.phone,
-        Email: profileData.email,
-        AccountId: accountId,
-      }),
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      console.error('Salesforce create contact error:', text);
-      throw new Error('Failed to create Salesforce contact');
-    }
-
-    const data = await res.json();
-    return data;
+  static async createSalesforceContact(profileData, tokenData, accountId) {
+    const userData = {
+      FirstName: profileData.name,
+      LastName: profileData.surname,
+      Phone: profileData.phone,
+      Email: profileData.email,
+      AccountId: accountId,
+    };
+    return await this.createSalesforceUser(tokenData, 'Contact', userData);
   }
 
   /**
-   * @param {string} accountName
+   * @param {Object} profileData
    * @param {Object} tokenData
    * @returns {Promise<string>}
    */
-  static async createSalesforceAccount(accountName, tokenData) {
-    const url = `${tokenData.instance_url}/services/data/v64.0/sobjects/Account/`;
+  static async createSalesforceAccount(profileData, tokenData) {
+    const userData = {
+      Name: profileData.accountName,
+    };
+    return await this.createSalesforceUser(tokenData, 'Account', userData);
+  }
+
+  /**
+   * @param {Object} tokenData
+   * @param {string} type
+   * @param {Object} userData
+   * @returns {Promise<Object>}
+   */
+  static async createSalesforceUser(tokenData, type, userData) {
+    if (!tokenData.access_token || !tokenData.instance_url) {
+      throw new Error('Invalid Salesforce token data');
+    }
+    const url = `${tokenData.instance_url}/services/data/v64.0/sobjects/${type}/`;
+
     const res = await fetch(url, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${tokenData.access_token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ Name: accountName }),
+      body: JSON.stringify(userData),
     });
 
     if (!res.ok) {
@@ -158,7 +157,7 @@ export class SalesforceService {
     }
 
     const data = await res.json();
-    return data.id;
+    return data;
   }
 
   /**
@@ -215,15 +214,56 @@ export class SalesforceService {
    * @param {string} profileId
    * @returns {Promise<void>}
    */
+
   static async unlinkSalesforce(profileId) {
     const { profileData, accessToken } = await this.getAccessToken(profileId);
     if (!profileData?.salesforceId) return;
 
+    await Promise.all([
+      this.unlinkAccount(profileData, accessToken),
+      this.unlinkContact(profileData, accessToken),
+    ]);
+
+    await prisma.salesforce.delete({
+      where: { profileId },
+    });
+  }
+
+  /**
+   * @param {Object} profileData
+   * @param {string} accessToken
+   * @returns {Promise<void>}
+   */
+  static async unlinkContact(profileData, accessToken) {
     const url = this.getDeleteUrl(
       profileData.salesforceId,
-      profileData.instanceUrl
+      profileData.instanceUrl,
+      'Contact'
     );
 
+    await this.unlinkRequest(url, accessToken);
+  }
+
+  /**
+   * @param {Object} profileData
+   * @param {string} accessToken
+   * @returns {Promise<void>}
+   */
+  static async unlinkAccount(profileData, accessToken) {
+    const url = this.getDeleteUrl(
+      profileData.accountId,
+      profileData.instanceUrl,
+      'Account'
+    );
+    await this.unlinkRequest(url, accessToken);
+  }
+
+  /**
+   * @param {string} url
+   * @param {string} accessToken
+   * @returns {Promise<void>}
+   */
+  static async unlinkRequest(url, accessToken) {
     const fetchRes = await fetch(url, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -233,15 +273,11 @@ export class SalesforceService {
       console.error('Salesforce deletion error', text);
       throw new Error('Failed to delete Salesforce profile');
     }
-
-    await prisma.salesforce.delete({
-      where: { profileId },
-    });
   }
 
   /**
    * @param {string} code
-   * @returns {string}
+   * @returns {URLSearchParams}
    */
   static getAuthCodeUrl(code) {
     return new URLSearchParams({
@@ -254,27 +290,29 @@ export class SalesforceService {
   }
 
   /**
-   * @param {string} profileId
+   * @param {Object} profileData
+   * @param {string} profileData.id
    * @returns {string}
    */
-  static getOauthUrl(profileId) {
+  static getOauthUrl(profileData) {
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: process.env.SF_CLIENT_ID,
       redirect_uri: process.env.SF_REDIRECT_URI,
-      state: profileId,
+      state: profileData.id,
     });
     return `https://login.salesforce.com/services/oauth2/authorize?${params.toString()}`;
   }
 
   /**
-   * @param {string} profileId
+   * @param {string} salesforceId
    * @param {string} instanceUrl
+   * @param {string} type
    * @returns {string}
    */
-  static getDeleteUrl(salesforceId, instanceUrl) {
+  static getDeleteUrl(salesforceId, instanceUrl, type) {
     if (!salesforceId) throw new Error('Salesforce ID is required');
     const baseUrl = instanceUrl || SALESFORCE.instanceUrl;
-    return `${baseUrl}/services/data/v64.0/sobjects/Contact/${salesforceId}`;
+    return `${baseUrl}/services/data/v64.0/sobjects/${type}/${salesforceId}`;
   }
 }

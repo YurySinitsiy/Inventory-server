@@ -2,13 +2,13 @@ import { SalesforceService } from '../services/salesforceService.js';
 
 export class SalesforceController {
   static async startSalesforce(req, res) {
-    const { profileId, profileData } = req.body;
-    if (!profileId || !profileData) {
+    const profileData = req.body;
+    if (!profileData) {
       return res.status(400).json({ error: 'Missing user ID or profile data' });
     }
     try {
-      await SalesforceService.saveProfileDraft(profileId, profileData);
-      const oauthUrl = SalesforceService.getOauthUrl(profileId);
+      await SalesforceService.saveProfileDraft(profileData);
+      const oauthUrl = SalesforceService.getOauthUrl(profileData);
       res.json({ oauthUrl });
     } catch (err) {
       console.error('Salesforce start failed:', err);

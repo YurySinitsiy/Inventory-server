@@ -3,6 +3,10 @@ import prisma from '../lib/prismaClient.js';
 import _ from 'lodash';
 
 export class OdooService {
+  /**
+   * @param {string} profileId
+   * @returns {Promise<string|null>}
+   */
   static async getToken(profileId) {
     const odooData = await prisma.odoo.findUnique({
       where: { profileId },
@@ -11,6 +15,10 @@ export class OdooService {
     return odooData.apiToken;
   }
 
+  /**
+   * @param {string} profileId
+   * @returns {Promise<string>}
+   */
   static async createToken(profileId) {
     const token = crypto.randomBytes(32).toString('hex');
 
@@ -23,6 +31,10 @@ export class OdooService {
     return odooData.apiToken;
   }
 
+  /**
+   * @param {string} token
+   * @returns {Promise<Array<Object>>}
+   */
   static async getAggregatedData(token) {
     const user = await this.getUserByToken(token);
     const userInventories = await this.getUserInventories(user.profileId);
@@ -35,6 +47,10 @@ export class OdooService {
     }));
   }
 
+  /**
+   * @param {string} token
+   * @returns {Promise<Object>}
+   */
   static async getUserByToken(token) {
     const user = await prisma.odoo.findUnique({
       where: { apiToken: token },
@@ -45,6 +61,10 @@ export class OdooService {
     return user;
   }
 
+  /**
+   * @param {string} profileId
+   * @returns {Promise<Array<Object>>}
+   */
   static async getUserInventories(profileId) {
     return await prisma.inventory.findMany({
       where: { ownerId: profileId },
@@ -52,6 +72,10 @@ export class OdooService {
     });
   }
 
+  /**
+   * @param {Object} inventory
+   * @returns {Array<Object>}
+   */
   static aggregateFields(inventory) {
     const slots = {
       text: [
@@ -68,14 +92,21 @@ export class OdooService {
     };
 
     return [
-      ...this.aggregateTextLink(slots, inventory, 'text'),
-      ...this.aggregateTextLink(slots, inventory, 'link'),
+      ...this.aggregateText(slots, inventory, 'text'),
+      ...this.aggregateText(slots, inventory, 'link'),
       ...this.aggregateNumber(slots, inventory),
       ...this.aggregateBoolean(slots, inventory),
     ];
   }
 
-  static aggregateTextLink = (slots, inventory, fieldType) => {
+  /**
+   * @param {Object} slots
+   * @param {Object} inventory
+   * @param {string} fieldType
+   * @param {Function} handler
+   * @returns {Array<Object>}
+   */
+  static aggregateByType(slots, inventory, fieldType, handler) {
     return inventory.fieldConfigs
       .filter((f) => slots[fieldType].includes(f.slot))
       .map((f) => {
@@ -83,7 +114,23 @@ export class OdooService {
           .map((item) => item[f.slot])
           .filter((v) => v != null && v !== '');
         if (!values.length) return null;
+        return handler(f, values, fieldType);
+      })
+      .filter(Boolean);
+  }
 
+  /**
+   * @param {Object} slots
+   * @param {Object} inventory
+   * @param {'text'|'link'} fieldType
+   * @returns {Array<Object>}
+   */
+  static aggregateText(slots, inventory, fieldType) {
+    return this.aggregateByType(
+      slots,
+      inventory,
+      fieldType,
+      (f, values, type) => {
         const top_answers = _(values)
           .countBy()
           .map((count, value) => ({ value, count }))
@@ -93,52 +140,52 @@ export class OdooService {
 
         return {
           text: f.title,
-          type: fieldType,
+          type,
           count: values.length,
           top_answers,
         };
-      })
-      .filter(Boolean);
-  };
+      }
+    );
+  }
 
-  static aggregateNumber = (slots, inventory) => {
-    return inventory.fieldConfigs
-      .filter((f) => slots.number.includes(f.slot))
-      .map((f) => {
-        const values = inventory.items
-          .map((item) => item[f.slot])
-          .filter((v) => typeof v === 'number');
-        if (!values.length) return null;
+  /**
+   * @param {Object} slots
+   * @param {Object} inventory
+   * @returns {Array<Object>}
+   */
+  static aggregateNumber(slots, inventory) {
+    return this.aggregateByType(slots, inventory, 'number', (f, values) => {
+      const numeric = values.filter((v) => typeof v === 'number');
+      if (!numeric.length) return null;
 
-        return {
-          text: f.title,
-          type: 'number',
-          count: values.length,
-          min: _.min(values),
-          max: _.max(values),
-          average: _.round(_.mean(values), 2),
-        };
-      })
-      .filter(Boolean);
-  };
+      return {
+        text: f.title,
+        type: 'number',
+        count: numeric.length,
+        min: _.min(numeric),
+        max: _.max(numeric),
+        average: _.round(_.mean(numeric), 2),
+      };
+    });
+  }
 
-  static aggregateBoolean = (slots, inventory) => {
-    return inventory.fieldConfigs
-      .filter((f) => slots.boolean.includes(f.slot))
-      .map((f) => {
-        const values = inventory.items
-          .map((item) => item[f.slot])
-          .filter((v) => typeof v === 'boolean');
-        if (!values.length) return null;
+  /**
+   * @param {Object} slots
+   * @param {Object} inventory
+   * @returns {Array<Object>}
+   */
+  static aggregateBoolean(slots, inventory) {
+    return this.aggregateByType(slots, inventory, 'boolean', (f, values) => {
+      const bools = values.filter((v) => typeof v === 'boolean');
+      if (!bools.length) return null;
 
-        const counts = _.countBy(values);
-        return {
-          text: f.title,
-          type: 'boolean',
-          count: values.length,
-          counts,
-        };
-      })
-      .filter(Boolean);
-  };
+      const counts = _.countBy(bools);
+      return {
+        text: f.title,
+        type: 'boolean',
+        count: bools.length,
+        counts,
+      };
+    });
+  }
 }
