@@ -1,6 +1,5 @@
 import { SALESFORCE } from '../config/salesforce.js';
 import prisma from '../lib/prismaClient.js';
-
 export class SalesforceService {
   /**
    * @param {Object} profileData
@@ -27,62 +26,38 @@ export class SalesforceService {
   }
 
   /**
-   * @param {string} code
-   * @returns {Promise<Object>}
-   */
-  static async exchangeCodeForToken(code) {
-    const params = this.getAuthCodeUrl(code);
-    const res = await fetch(SALESFORCE.tokenUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params.toString(),
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('Salesforce token error', errorText);
-      throw new Error('Failed to exchamge code for token');
-    }
-
-    const data = await res.json();
-    return data;
-  }
-
-  /**
    * @param {string} profileId
    * @param {string} code
    * @returns {Promise<void>}
    */
-  static async linkSalesforce(profileId, code) {
-    const tokenData = await this.exchangeCodeForToken(code);
+  static async linkSalesforce(profileId) {
     const profileData = await this.getProfileDraft(profileId);
+    const tokenData = await this.getAccessToken();
+
+    const contactData = await this.createSalesforceContact(
+      profileData,
+      tokenData
+    );
+
+    const accountData = await this.createSalesforceAccount(
+      profileData,
+      tokenData,
+      contactData.id
+    );
 
     const updateData = {
       accessToken: tokenData.access_token,
       refreshToken: tokenData.refresh_token,
       instanceUrl: tokenData.instance_url,
+      salesforceId: contactData.id,
+      accountId: accountData.id,
     };
-
-    if (profileData) {
-      const contactData = await this.createSalesforceContact(
-        profileData,
-        tokenData
-      );
-
-      const accountData = await this.createSalesforceAccount(
-        profileData,
-        tokenData,
-        contactData.id
-      );
-
-      updateData.salesforceId = contactData.id;
-      updateData.accountId = accountData.id;
-    }
-
     await prisma.salesforce.update({
       where: { profileId },
       data: updateData,
     });
+
+    return contactData.id
   }
 
   /**
@@ -175,40 +150,28 @@ export class SalesforceService {
   }
 
   /**
-   * @param {string} profileId
    * @returns {Promise<Object>}
    */
-  static async getAccessToken(profileId) {
-    const profileData = await prisma.salesforce.findUnique({
-      where: { profileId },
-    });
-
-    if (!profileData) throw new Error('Salesforce profile data not found');
-
-    const { refreshToken } = profileData;
+  static async getAccessToken() {
     const params = new URLSearchParams();
-    params.append('grant_type', 'refresh_token');
+    params.append('grant_type', 'password');
     params.append('client_id', SALESFORCE.clientId);
     params.append('client_secret', SALESFORCE.clientSecret);
-    params.append('refresh_token', refreshToken);
-
-    const res = await fetch(SALESFORCE.tokenUrl, {
+    params.append('username', SALESFORCE.username);
+    params.append('password', SALESFORCE.password);
+    const res = await fetch(`${SALESFORCE.loginUrl}/services/oauth2/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params.toString(),
     });
 
-    if (!res.ok) throw new Error('Failed to refresh Salesforce token');
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('Salesforce login error:', errText);
+      throw new Error('Failed to authenticate with Salesforce');
+    }
 
-    const data = await res.json();
-    const accessToken = data.access_token;
-
-    await prisma.salesforce.update({
-      where: { profileId },
-      data: { accessToken },
-    });
-
-    return { profileData, accessToken };
+    return res.json();
   }
 
   /**
@@ -217,8 +180,11 @@ export class SalesforceService {
    */
 
   static async unlinkSalesforce(profileId) {
-    const { profileData, accessToken } = await this.getAccessToken(profileId);
-    if (!profileData?.salesforceId) return;
+    const tokenData = await this.getAccessToken();
+    const profileData = await prisma.salesforce.findUnique({
+      where: { profileId },
+    });
+    const accessToken = tokenData.access_token;
 
     await Promise.all([
       this.unlinkAccount(profileData, accessToken),
@@ -274,35 +240,6 @@ export class SalesforceService {
       console.error('Salesforce deletion error', text);
       throw new Error('Failed to delete Salesforce profile');
     }
-  }
-
-  /**
-   * @param {string} code
-   * @returns {URLSearchParams}
-   */
-  static getAuthCodeUrl(code) {
-    return new URLSearchParams({
-      grant_type: 'authorization_code',
-      code,
-      client_id: SALESFORCE.clientId,
-      client_secret: SALESFORCE.clientSecret,
-      redirect_uri: SALESFORCE.redirectUri,
-    });
-  }
-
-  /**
-   * @param {Object} profileData
-   * @param {string} profileData.id
-   * @returns {string}
-   */
-  static getOauthUrl(profileData) {
-    const params = new URLSearchParams({
-      response_type: 'code',
-      client_id: process.env.SF_CLIENT_ID,
-      redirect_uri: process.env.SF_REDIRECT_URI,
-      state: profileData.id,
-    });
-    return `https://login.salesforce.com/services/oauth2/authorize?${params.toString()}`;
   }
 
   /**

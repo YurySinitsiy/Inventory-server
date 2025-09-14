@@ -8,26 +8,13 @@ export class SalesforceController {
     }
     try {
       await SalesforceService.saveProfileDraft(profileData);
-      const oauthUrl = SalesforceService.getOauthUrl(profileData);
-      res.json({ oauthUrl });
+      const salesforcecId = await SalesforceService.linkSalesforce(
+        profileData.id
+      );
+      res.json(salesforcecId);
     } catch (err) {
       console.error('Salesforce start failed:', err);
       res.status(500).json({ error: 'Salesforce start failed' });
-    }
-  }
-
-  static async linkSalesforce(req, res) {
-    const { code, state: profileId } = req.query;
-    if (!code) return res.status(400).send('No code provided');
-
-    try {
-      await SalesforceService.linkSalesforce(profileId, code);
-      res.redirect(
-        `${process.env.FRONTEND_URL}/salesforce/success?id=${profileId}`
-      );
-    } catch (err) {
-      console.error(err);
-      res.status(500).send('Salesforce link failed');
     }
   }
 

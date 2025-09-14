@@ -7,7 +7,7 @@ import authRoutes from './routes/authRoutes.js';
 import metadataRoutes from './routes/metadataRoutes.js';
 import salesforceRoutes from './routes/salesforceRoutes.js';
 import odooRoutes from './routes/odooRoutes.js';
-import supportRoutes from './routes/supportRoutes.js'
+import supportRoutes from './routes/supportRoutes.js';
 const app = express();
 
 app.use(
@@ -27,7 +27,11 @@ app.use(
       }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-token'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-api-token',
+    ],
   })
 );
 app.use(express.json());
@@ -48,7 +52,6 @@ app.use('/api', metadataRoutes);
 app.use('/api/salesforce', salesforceRoutes);
 app.use('/api/odoo', odooRoutes);
 app.use('/api/support', supportRoutes);
-
 
 const PORT = 3001;
 app.listen(PORT, () => {
