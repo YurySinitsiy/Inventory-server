@@ -1,4 +1,5 @@
 import { SALESFORCE } from '../config/salesforce.js';
+import prisma from '../lib/prismaClient.js';
 
 export class SalesforceService {
   /**
