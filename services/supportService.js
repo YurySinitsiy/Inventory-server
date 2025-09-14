@@ -1,4 +1,5 @@
 import { Dropbox } from 'dropbox';
+import prisma from '../lib/prismaClient.js';
 
 export class SupportService {
   static async sendMessage(user, data) {
