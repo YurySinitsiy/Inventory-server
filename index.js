@@ -15,11 +15,10 @@ app.use(
     origin: function (origin, callback) {
       const allowedOrigins = [
         'https://my-odoo-app.odoo.com',
-        'http://127.0.0.1:5500/index.html',
         'http://localhost:5173',
         'https://inventory-client-lac.vercel.app',
       ];
-      if (!origin) return callback(null, true); // для Postman или серверных запросов
+      if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {

@@ -4,7 +4,7 @@ export class SupportController {
   static async sendMessage(req, res) {
     try {
       const user = req.user;
-      const  data  = req.body;
+      const data = req.body;
       if (!user) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
