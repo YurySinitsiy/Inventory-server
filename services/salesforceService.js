@@ -34,15 +34,15 @@ export class SalesforceService {
     const profileData = await this.getProfileDraft(profileId);
     const tokenData = await this.getAccessToken();
 
-    const contactData = await this.createSalesforceContact(
+    const accountData = await this.createSalesforceAccount(
       profileData,
       tokenData
     );
 
-    const accountData = await this.createSalesforceAccount(
+    const contactData = await this.createSalesforceContact(
       profileData,
       tokenData,
-      contactData.id
+      accountData.id
     );
 
     const updateData = {
@@ -57,7 +57,7 @@ export class SalesforceService {
       data: updateData,
     });
 
-    return contactData.id
+    return await this.getSalesforceData(profileId);
   }
 
   /**
@@ -140,13 +140,12 @@ export class SalesforceService {
    * @param {string} profileId
    * @returns {Promise<string>}
    */
-  static async getSalesforceId(profileId) {
+  static async getSalesforceData(profileId) {
     const record = await prisma.salesforce.findUnique({
       where: { profileId },
-      select: { salesforceId: true },
     });
 
-    return record || { salesforceId: null };
+    return record || null;
   }
 
   /**

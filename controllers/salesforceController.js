@@ -8,22 +8,22 @@ export class SalesforceController {
     }
     try {
       await SalesforceService.saveProfileDraft(profileData);
-      const salesforcecId = await SalesforceService.linkSalesforce(
+      const salesforceUser = await SalesforceService.linkSalesforce(
         profileData.id
       );
-      res.json(salesforcecId);
+      res.json(salesforceUser);
     } catch (err) {
       console.error('Salesforce start failed:', err);
       res.status(500).json({ error: 'Salesforce start failed' });
     }
   }
 
-  static async getSalesforceId(req, res) {
+  static async getSalesforceData(req, res) {
     const { id: userId } = req.params;
     try {
-      const data = await SalesforceService.getSalesforceId(userId);
-      if (!data) return res.json({ salesforceId: null });
-      res.json(data.salesforceId);
+      const data = await SalesforceService.getSalesforceData(userId);
+      if (!data) return res.json(null);
+      res.json(data);
     } catch (err) {
       console.error(err);
       res.status(500).send('Salesforce fetch data failed');
